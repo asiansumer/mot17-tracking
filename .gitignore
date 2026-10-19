@@ -2,3 +2,5 @@ data/
 __pycache__/
 best.pt
 dets/
+detect_try.py
+results/

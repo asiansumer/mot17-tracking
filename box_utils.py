@@ -144,3 +144,9 @@ def size_ap(all_records, total_gt: dict) -> dict:
         out[s] = {"ap50": ap, "recall": rec, "num_gt": total_gt[s]}
 
     return out
+
+
+def xyxy_to_xywh(box):
+    """把 (起点x, 起点y, 终点x, 终点y) 换成 (起点x, 起点y, 宽, 高)"""
+    x1, y1, x2, y2 = box
+    return (x1, y1, x2-x1, y2-y1)
