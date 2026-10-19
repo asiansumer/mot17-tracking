@@ -28,3 +28,18 @@ def load_gt(path):
                 frames[frame] = []
             frames[frame].append((pid, box))
     return frames
+
+
+def load_dets(path):
+    """读检测结果文件，返回 {帧号: [(框, 分数), ...]}"""
+    frames = {}
+    with open(path) as f:
+        for line in f:
+            parts = line.strip().split(",")
+            frame = int(parts[0])
+            box = (float(parts[1]), float(parts[2]), float(parts[3]), float(parts[4]))
+            score = float(parts[5])
+            if frame not in frames:
+                frames[frame] = []
+            frames[frame].append((box, score))
+    return frames
