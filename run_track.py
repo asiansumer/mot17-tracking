@@ -7,13 +7,13 @@ from box_utils import xyxy_to_xywh
 def run_seq(seq, score_thr=0.5):
     dets = load_dets(f"dets/{seq}.txt")
     n_frames = len(os.listdir(f"data/MOT17/train/{seq}/img1"))
-    os.makedirs("results", exist_ok=True)
+    os.makedirs("results/v3/data", exist_ok=True)
 
     tracks = {}
     missed = {}    # 一开始档案是空的
     vels = {}
     next_id = 1       # 取号机从 1 开始
-    with open(f"results/{seq}.txt", "w") as f:
+    with open(f"results/v3/data/{seq}.txt", "w") as f:
         for frame in range(1, n_frames + 1):
             # 1. 这一帧只留高分框（第 3 关先不用低分框）
             high = []
