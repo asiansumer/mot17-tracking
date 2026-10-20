@@ -94,3 +94,73 @@ def track_step_v3(tracks, missed, vels, dets, next_id, iou_thr=0.3, max_age=30):
             new_vels[next_id] = (0, 0, 0, 0)
             next_id += 1
     return new_tracks,new_missed, new_vels, next_id
+
+
+def track_step_v4(tracks, missed, vels, dets, next_id, high_thr=0.5, iou_thr=0.3, max_age=30):
+    '''v4 ByteTrack：低分框只用来续老轨迹'''
+    high = []
+    low = []
+    for box, score in dets:
+        if score >= high_thr:
+            high.append((box, score))
+        else:
+            low.append((box, score))
+
+    new_tracks = {}
+    new_missed = {}
+    new_vels = {}
+    used_high = [False] * len(high)
+    left = []
+
+    for tid, tbox in tracks.items():
+        pred = predict(tbox, vels[tid])
+        best_j, best_v = -1, iou_thr
+
+        for j, (box, score) in enumerate(high):
+            if used_high[j]:
+                continue
+            v = iou(box, pred)
+            if v > best_v:
+                best_j, best_v = j, v
+
+        if best_j >= 0:
+            used_high[best_j] = True
+            new_box, new_vel = update(pred, high[best_j][0], vels[tid])
+            new_tracks[tid] = new_box
+            new_vels[tid] = new_vel
+            new_missed[tid] = 0
+        else:
+            left.append(tid)
+
+    # 第二轮
+    used_low = [False] * len(low)
+    for tid in left:
+        pred = predict(tracks[tid], vels[tid])
+        best_j, best_v = -1, iou_thr
+
+        for j, (box, score) in enumerate(low):
+            if used_low[j]:
+                continue
+            v = iou(box, pred)
+            if v > best_v:
+                best_j, best_v = j, v
+
+        if best_j >= 0:
+            used_low[best_j] = True
+            new_box, new_vel = update(pred, low[best_j][0], vels[tid])
+            new_tracks[tid] = new_box
+            new_vels[tid] = new_vel
+            new_missed[tid] = 0
+        else:
+            new_missed[tid] = missed[tid] + 1
+            if new_missed[tid] <= max_age:
+                new_tracks[tid] = pred
+                new_vels[tid] = vels[tid]
+    for j, (box, score) in enumerate(high):
+        if not used_high[j]:
+            new_tracks[next_id] = box
+            new_missed[next_id] = 0
+            new_vels[next_id] = (0, 0, 0, 0)
+            next_id += 1
+
+    return new_tracks,new_missed, new_vels, next_id

@@ -1,28 +1,24 @@
 import os
 from mot_io import load_dets
-from tracker import track_step_v3
+from tracker import track_step_v4
 from box_utils import xyxy_to_xywh
 
 
-def run_seq(seq, score_thr=0.5):
+def run_seq(seq):
     dets = load_dets(f"dets/{seq}.txt")
     n_frames = len(os.listdir(f"data/MOT17/train/{seq}/img1"))
-    os.makedirs("results/v3/data", exist_ok=True)
+    os.makedirs("results/v4/data", exist_ok=True)
 
     tracks = {}
-    missed = {}    # 一开始档案是空的
+    missed = {}
     vels = {}
     next_id = 1       # 取号机从 1 开始
-    with open(f"results/v3/data/{seq}.txt", "w") as f:
+    with open(f"results/v4/data/{seq}.txt", "w") as f:
         for frame in range(1, n_frames + 1):
-            # 1. 这一帧只留高分框（第 3 关先不用低分框）
-            high = []
-            for box, score in dets.get(frame, []):
-                if score >= score_thr:
-                    high.append((box, score))
-            # 2. 跟踪一帧
-            tracks, missed, vels, next_id = track_step_v3(tracks, missed, vels,  high, next_id)
-            # 3. 把这一帧档案里的每个人写进结果文件（MOT 格式）
+            # 1. 跟踪一帧
+            frame_dets = dets.get(frame, [])
+            tracks, missed, vels, next_id = track_step_v4(tracks, missed, vels,  frame_dets, next_id)
+            # 2. 把这一帧档案里的每个人写进结果文件（MOT 格式）
             for tid, box in tracks.items():
                 if missed[tid] == 0:
                     x, y, w, h = xyxy_to_xywh(box)
